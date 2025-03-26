@@ -1,16 +1,19 @@
-FROM golang:1.24.1
+FROM golang:1.24.1 as stage1
 
 # set the working directory
-WORKDIR /go/src/app 
+WORKDIR /app 
 
 # copy the source files
-COPY . .
+COPY go.mod go.sum ./
+RUN go mod download
 
-# EXPOSE the port
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o meuExecutavel ./cmd
+
 EXPOSE 8080
 
-# build the Go app
-RUN go build -o main cmd/main.go
+FROM scratch
 
-# run the executable
-CMD ["./main"]
+COPY --from=stage1 /app/meuExecutavel /
+
+ENTRYPOINT [ "/meuExecutavel" ]
